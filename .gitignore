@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# NextFlow
+.nextflow.*
+.nextflow/
+*.swp
+
 # Distribution / packaging
 .Python
 build/
