@@ -10,6 +10,7 @@ __pycache__/
 .nextflow.*
 .nextflow/
 *.swp
+work/
 
 # Distribution / packaging
 .Python

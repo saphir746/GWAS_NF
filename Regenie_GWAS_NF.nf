@@ -2,11 +2,8 @@
 
 import java.nio.file.Paths
 
-params.sample="/camp/project/proj-tracerx-lung/public_datasets/UK_BIOBANK/ImputedGenomicData/ukb51637_imp_chr18_v3_s487298.sample"
-params.bgen="/camp/project/proj-tracerx-lung/public_datasets/UK_BIOBANK/ImputedGenomicData/ukb_imp_chr18_v3.bgen"
-
 // scripts
-project_dir=Paths.get("scripts/").toString()
+project_dir=Paths.get(System.getProperty("user.dir"),"scripts/").toString()
 excl_script = Paths.get(project_dir, "genom_exclusion.py")
 manPlot_script = Paths.get(project_dir, "GWA_results.py")
 GWA_post = Paths.get(project_dir, "GWA_postprocess.py")
@@ -20,9 +17,6 @@ process genom_excl {
 
     conda '/camp/stp/babs/working/software/anaconda/envs/biobankread/'
 
-    input:
-    file genom_excl from Excl_ch
-
     output:
     file 'qc_pass2.id' into Excl_ch_2
 
@@ -30,18 +24,17 @@ process genom_excl {
     """
     #!/usr/bin/env bash
     
-    python ${excl_script} --genomExcl $genom_excl
+    python ${excl_script} --genomExcl ${params.Excl_ids}
     """
 }
 
-Excl_ch_2.into{ Excl_ch_bt1; Excl_ch_bt2; Excl_ch_rare; Excl_ch_cont1; Excl_ch_cont2 }
+Excl_ch_2.into{ Excl_ch_bt1; Excl_ch_bt2; Excl_ch_cont1; Excl_ch_cont2 }
 
 /*
 * * 2: Regenie - step 1
 * *
 */
- 
- 
+  
 process Regenie_1 { 
  
     conda '/camp/stp/babs/working/schneid/conda/envs/RegenieGWA'
@@ -54,7 +47,7 @@ process Regenie_1 {
  
     script:
     """
-    ln -s ${params.Bed} ${params.Bim} ${params.Fam} . 
+    ln -s ${params.Bed} ${params.Bim} ${params.Fam} .
 
     regenie --step 1 \
         --bed ukb_cal_Chr18 \
@@ -62,8 +55,8 @@ process Regenie_1 {
         --keep $exlcIDs \
         --covarFile ${params.Covar_data} \
         --covarColList "Age","Gender","gPC1","gPC2" \
-        --phenoFile  ${params.Cat_data} \
-        --phenoColList "hBP","Uni_degree" \
+        --phenoFile ${params.Cat_data} \
+        --phenoColList "Uni_degree" \
         --bt \
         --bsize 701 \
         --lowmem \
@@ -93,7 +86,7 @@ process Regenie_1_cont {
         --covarFile ${params.Covar_data} \
         --covarColList "Age","Gender","gPC1","gPC2" \
         --phenoFile ${params.Cont_data} \
-        --phenoCol "EduYrs_UNESCO" \
+        --phenoCol "Basal_metabolic_rate" \
         --bsize 701 \
         --lowmem \
         --out ukb_step1_cont
@@ -104,8 +97,6 @@ process Regenie_1_cont {
 /**
 *** 3: Regenie - step 2
 ***/
-
-regenie1_ch_bt.into{ regenie1_ch_bt; regenie1_ch_rare }
 
 process Regenie_2 {
 
@@ -160,7 +151,7 @@ process Regenie_2_cont {
         --keep $exlcIDs \
         --pred ukb_step1_cont_pred.list \
         --phenoFile ${params.Cont_data} \
-        --phenoCol "EduYrs_UNESCO" \
+        --phenoCol "Basal_metabolic_rate" \
         --covarFile ${params.Covar_data} \
         --covarColList "Age","Gender" \
         --bsize 500 \
@@ -173,8 +164,6 @@ process Regenie_2_cont {
 
 regenie_ch_final.flatten().concat(regenie_ch_final_cont.flatten()).set{ regenie_ch_final_all }
 
-regenie_ch_final_all.concat(regenie_ch_rare.flatten()).set{ regenie_ch_final_all }
-
 process GWA_summary {
 
    executor 'local'
@@ -186,8 +175,9 @@ process GWA_summary {
 
    output:
    file('ZNF516_GWA_*_results.csv') into Ch_final
+   val 'OK' into Ch_trigger
 
-   publishDir "${params.outdir}/", mode: params.publish_dir_mode, overwrite: true,
+   publishDir "${params.out_ch}/", mode: params.publish_dir_mode, overwrite: true,
    saveAs: { filename -> if ( filename.indexOf(".csv") != 1 ) {
                                      "$filename"
                               } else {
@@ -209,12 +199,12 @@ process GWA_postProcess {
    conda '/camp/stp/babs/working/software/anaconda/envs/biobankread'
 
    input:
-   path Out from Channel.fromPath(params.out_ch)
+   val 'OK' from Ch_trigger
 
    output:
    file('ZNF516_All_GWA_signif_results.csv') into Ch_signif
 
-   publishDir "${params.outdir}/", mode: params.publish_dir_mode, overwrite: true,
+   publishDir "${params.out_ch}/", mode: params.publish_dir_mode, overwrite: true,
    saveAs: { filename -> if ( filename.indexOf(".csv") != 1 ) {
                                         "$filename"
                                 } else {
@@ -226,7 +216,7 @@ process GWA_postProcess {
    """
    #!/usr/bin/env bash
    
-   python ${GWA_post} --Folder ${Out}/
+   python ${GWA_post} --Folder ${params.out_ch}/
    """
 }
 
