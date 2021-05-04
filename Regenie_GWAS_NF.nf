@@ -54,12 +54,10 @@ process Regenie_1 {
         --extract ${params.list1} \
         --keep $exlcIDs \
         --covarFile ${params.Covar_data} \
-        --covarColList "Age","Gender","gPC1","gPC2" \
+        --covarColList "Age","Gender" \
         --phenoFile ${params.Cat_data} \
-        --phenoColList "Uni_degree" \
         --bt \
         --bsize 701 \
-        --lowmem \
         --out ukb_step1_BT
     """
 }
@@ -84,9 +82,8 @@ process Regenie_1_cont {
         --extract ${params.list1} \
         --keep $exlcIDs \
         --covarFile ${params.Covar_data} \
-        --covarColList "Age","Gender","gPC1","gPC2" \
+        --covarColList "Age","Gender" \
         --phenoFile ${params.Cont_data} \
-        --phenoCol "Basal_metabolic_rate" \
         --bsize 701 \
         --lowmem \
         --out ukb_step1_cont
@@ -100,6 +97,7 @@ process Regenie_1_cont {
 
 process Regenie_2 {
 
+    errorStrategy 'ignore'
     conda '/camp/stp/babs/working/schneid/conda/envs/RegenieGWA'
 
     input:
@@ -119,7 +117,6 @@ process Regenie_2 {
         --keep $exlcIDs \
         --pred ukb_step1_BT_pred.list \
         --phenoFile ${params.Cat_data} \
-        --phenoColList "Uni_degree" \
         --covarFile ${params.Covar_data} \
         --covarColList "Age","Gender" \
         --bt \
@@ -130,8 +127,41 @@ process Regenie_2 {
     """
 }
 
+//process Regenie_2_cont {
+//
+//    errorStrategy 'ignore'
+//    conda '/camp/stp/babs/working/schneid/conda/envs/RegenieGWA'
+//
+//    input:
+//    file('ukb_step1_cont_pred.list') from regenie1_ch_cont
+//    file exlcIDs from Excl_ch_cont2
+//
+//    output:
+//    file('*.regenie') into regenie_ch_final_cont
+//
+//    script:
+//    """
+//    ln -s ${params.Bed} ${params.Bim} ${params.Fam} .
+//
+//    regenie --step 2 \
+//        --bed ukb_cal_Chr18 \
+//        --extract ${params.list1} \
+//        --keep $exlcIDs \
+//        --pred ukb_step1_cont_pred.list \
+//        --phenoFile ${params.Cont_data} \
+//        --covarFile ${params.Covar_data} \
+//        --covarColList "Age","Gender" \
+//        --bsize 500 \
+//        --spa --approx \
+//        --split \
+//        --out ukb_step2_chr18
+//    """
+//}
+
+
 process Regenie_2_cont {
 
+    errorStrategy 'ignore'
     conda '/camp/stp/babs/working/schneid/conda/envs/RegenieGWA'
 
     input:
@@ -143,19 +173,16 @@ process Regenie_2_cont {
 
     script:
     """
-    ln -s ${params.Bed} ${params.Bim} ${params.Fam} .
-
     regenie --step 2 \
-        --bed ukb_cal_Chr18 \
-        --extract ${params.list1} \
-        --keep $exlcIDs \
+        --bgen ${params.bgen} \
+        --ref-first \
+	--sample ${params.sample} \
         --pred ukb_step1_cont_pred.list \
         --phenoFile ${params.Cont_data} \
-        --phenoCol "Basal_metabolic_rate" \
         --covarFile ${params.Covar_data} \
         --covarColList "Age","Gender" \
         --bsize 500 \
-        --firth --approx \
+        --spa --approx \
         --split \
         --out ukb_step2_chr18
     """
@@ -168,7 +195,6 @@ process GWA_summary {
 
    executor 'local'
 
-   conda '/camp/stp/babs/working/software/anaconda/envs/biobankread'
 
    input:
    file regenie from regenie_ch_final_all
