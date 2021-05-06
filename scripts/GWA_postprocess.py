@@ -27,11 +27,9 @@ Dft=pd.DataFrame(columns=['GENPOS', 'ID', 'ALLELE0', 'ALLELE1', 'A1FREQ', 'BETA'
 for f in files:
     name=re.findall(r'ZNF516_GWA_(.*)_results.csv',f)[0]
     df=pd.read_csv(folder+f)
-    df=df[df.PVAL_adj<0.1]#df[df['Signif']==1]
+    #df=df[df.PVAL_adj<0.1]#df[df['Signif']==1]
     if len(df)>0:
          Df=pd.concat([Df,df[['ID','GENPOS', 'ALLELE0', 'ALLELE1', 'A1FREQ']]])
-         #Df=pd.merge(Df,df[['GENPOS','PVAL']],on='GENPOS',how='outer')
-         #Df.rename(columns={'PVAL':'PVAL_'+name}, inplace=True)
          ####
          dfsub=df[df.PVAL_adj==min(df.PVAL_adj)]
          if len(dfsub)>1:
@@ -43,17 +41,12 @@ for f in files:
 
 ###
 #####
-         
-#Df2=Df.drop_duplicates(subset='ID',keep='first')
-#Df2.to_csv('ZNF516_All_GWA_signif_results.csv',index=None)
 #
 Dft=Dft[['GENPOS', 'ID', 'ALLELE0', 'ALLELE1', 'A1FREQ', 'BETA', 'SE','PVAL', 'PVAL_adj','Phenotype']]
 Dft.sort_values(by='GENPOS',inplace=True)
 Dft.to_csv('ZNF516_All_GWA_signif_results.csv',index=None)
 #
 Signif_pheno=Dft.Phenotype.tolist()
-#[re.findall(r'PVAL_(.*)',c)[0] for c in Df2.columns[5::].tolist()]
-#Signif_hits=Df2['ID'].tolist()
 #
 pics=[f for f in os.listdir(folder) if ('.png' in f) & ('ZNF516_GWA' in f)]
 pics=[p for p in pics if re.findall('|'.join(Signif_pheno),p)]

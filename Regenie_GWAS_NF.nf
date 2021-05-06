@@ -109,11 +109,10 @@ process Regenie_2 {
 
     script:
     """
-     ln -s ${params.Bed} ${params.Bim} ${params.Fam} .
-
     regenie --step 2 \
-        --bed ukb_cal_Chr18 \
-        --extract ${params.list1} \
+        --bgen ${params.bgen} \
+	--ref-first \
+	--sample ${params.sample} \
         --keep $exlcIDs \
         --pred ukb_step1_BT_pred.list \
         --phenoFile ${params.Cat_data} \
@@ -162,6 +161,7 @@ process Regenie_2 {
 process Regenie_2_cont {
 
     errorStrategy 'ignore'
+    label 'process_high'
     conda '/camp/stp/babs/working/schneid/conda/envs/RegenieGWA'
 
     input:
@@ -178,6 +178,7 @@ process Regenie_2_cont {
         --ref-first \
 	--sample ${params.sample} \
         --pred ukb_step1_cont_pred.list \
+	--keep $exlcIDs \
         --phenoFile ${params.Cont_data} \
         --covarFile ${params.Covar_data} \
         --covarColList "Age","Gender" \

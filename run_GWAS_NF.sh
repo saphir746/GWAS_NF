@@ -29,6 +29,7 @@ nextflow Regenie_GWAS_NF.nf -with-dag GWAS.svg -resume \
 	--sample ${UKB_dir}"ukb51637_imp_chr18_v3_s487298.sample" \
 	--bgen ${UKB_dir}"ukb_imp_chr18_v3.bgen" \
 	--out_ch $OUTDIR \
+	-work-dir "/camp/stp/babs/scratch/schneid/Regenie_GWA_NF/" \
         --Bed ${genom_dir}"ukb_cal_Chr18.bed" \
 	--Bim ${genom_dir}"ukb_cal_Chr18.bim" \
 	--Fam ${genom_dir}"ukb_cal_Chr18.fam" \
